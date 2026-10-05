@@ -34,7 +34,7 @@ class Config:
     BUSINESS_CONTEXT = os.environ.get(
         "BUSINESS_CONTEXT",
         (
-            "BURAYA YAZACAGIN KISIM"
+            "ADSC; yüzeysel reklam kalıplarını reddeden, markalara geçici gürültüler yerine derinlemesine hikayeler ve kalıcı bağlar kazandıran sinematik, minimalist ve stratejik bir yaratıcı ajanstır. Sıradanlığa karşı net bir duruş sergileyen ajansımız, dijital dünyanın karmaşasında markaların özünü ortaya çıkarır. Sektörün bu konuda yaşadığı ezberci ve sığ yaklaşımlardaki büyük eksikliği görerek, geleneksel kalıpları yıkan gerilla reklamcılığı taktiklerini en keskin şekilde kullanarak ön plana çıkmayı hedefler."
         ),
     )
 
