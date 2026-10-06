@@ -6,8 +6,9 @@ from app.services.ai_service import ai_service, AIServiceError
 api_bp = Blueprint('api', __name__)
 main_bp = Blueprint('main', __name__)
 
-# Render ve Wix için sağlık kontrolü
+# Render'ın dahili kontrolü ve Wix için sağlık kontrolü (Tüm varyasyonlar eklendi)
 @main_bp.route('/health', methods=['GET', 'OPTIONS'])
+@main_bp.route('/api/health', methods=['GET', 'OPTIONS'])
 @api_bp.route('/health', methods=['GET', 'OPTIONS'])
 def health_check():
     return jsonify({"basari": True, "mesaj": "Sunucu ayakta ve dinliyor!"}), 200
