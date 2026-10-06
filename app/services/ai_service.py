@@ -35,9 +35,8 @@ def ai_service(prompt, history=None):
     # Kullanıcının son mesajını ekle
     messages.append({"role": "user", "content": prompt})
 
-    # Groq OpenAI uyumlu payload yapısı
     payload = {
-        "model": "openai/gpt-oss-120b",
+        "model": "llama3-8b-8192",  # YAVAŞ MODEL YERİNE EN HIZLI GROQ MODELİ EKLENDİ
         "messages": messages,
         "max_tokens": 500,
         "temperature": 0.7
