@@ -28,7 +28,7 @@ def ai_service(prompt, history=None):
     messages.append({"role": "user", "content": prompt})
 
     payload = {
-        "model": "llama-3.1-8b-instant",
+        "model": "openai/gpt-oss-120b",
         "messages": messages,
         "max_tokens": 500,
         "temperature": 0.7
