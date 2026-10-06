@@ -27,7 +27,7 @@ def sohbet():
         mesaj = veri.get('mesaj')
         gecmis = veri.get('gecmis', [])
         
-        # Groq modelinden yanıtı al (önceki adımda güncellediğimiz ai_service.py çalışacak)
+        # Groq modelinden yanıtı al
         yanit = ai_service(mesaj, gecmis)
         
         return jsonify({"basari": True, "cevap": yanit}), 200
