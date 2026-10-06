@@ -9,7 +9,6 @@ main_bp = Blueprint('main', __name__)
 # Render'ın dahili kontrolü ve Wix için sağlık kontrolü (Tüm varyasyonlar eklendi)
 @main_bp.route('/health', methods=['GET', 'OPTIONS'])
 @main_bp.route('/api/health', methods=['GET', 'OPTIONS'])
-@api_bp.route('/health', methods=['GET', 'OPTIONS'])
 def health_check():
     return jsonify({"basari": True, "mesaj": "Sunucu ayakta ve dinliyor!"}), 200
 
@@ -21,7 +20,7 @@ def sohbet():
         return '', 204
 
     try:
-        veri = request.get_json()
+        veri = request.get_json(silent=True) or {}
         if not veri or 'mesaj' not in veri:
             return jsonify({"basari": False, "hata": "Mesaj alanı zorunludur."}), 400
         
@@ -31,11 +30,19 @@ def sohbet():
         # Groq modelinden yanıtı al
         yanit = ai_service(mesaj, gecmis)
         
-        return jsonify({"basari": True, "cevap": yanit}), 200
+        # Wix tarafı hem "cevap" hem "yanit" olarak okuyabilsin diye ikisini de ekliyoruz
+        return jsonify({
+            "basari": True, 
+            "cevap": yanit,
+            "yanit": yanit
+        }), 200
 
     except AIServiceError as e:
+        # Hatanın sebebini Render loglarına net yazdırır
+        print(f"--- YAPAY ZEKA SERVIS HATASI: {str(e)} ---")
         return jsonify({"basari": False, "hata": str(e)}), 503
     except Exception as e:
+        print(f"--- KRITIK SUNUCU HATASI: {str(e)} ---")
         return jsonify({"basari": False, "hata": f"Sunucu hatası: {str(e)}"}), 500
 
 # Müşteri Adayı (Lead) Toplama Rotası
@@ -45,7 +52,7 @@ def yeni_lead():
         return '', 204
 
     try:
-        veri = request.get_json()
+        veri = request.get_json(silent=True) or {}
         isim = veri.get('isim') or veri.get('name')
         telefon = veri.get('telefon') or veri.get('phone')
         mesaj = veri.get('mesaj') or veri.get('message', '')
