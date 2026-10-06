@@ -7,7 +7,7 @@ api_bp = Blueprint('api', __name__)
 main_bp = Blueprint('main', __name__)
 
 # ---------------------------------------------------------
-# Sayfa Rotaları
+# Sayfa ve Sağlık Kontrolü (Health Check) Rotaları
 # ---------------------------------------------------------
 @main_bp.route('/', methods=['GET'])
 def index():
@@ -17,11 +17,23 @@ def index():
 def dashboard():
     return render_template('dashboard.html')
 
+# YENİ: Wix'in ve Render'ın sunucuyu uyanık tutması için gereken sağlık rotaları
+@main_bp.route('/health', methods=['GET', 'OPTIONS'])
+@api_bp.route('/health', methods=['GET', 'OPTIONS'])
+def health_check():
+    return jsonify({"basari": True, "mesaj": "Sunucu ayakta ve dinliyor!"}), 200
+
 # ---------------------------------------------------------
 # API Uç Noktaları
 # ---------------------------------------------------------
-@api_bp.route('/sohbet', methods=['POST'])
+
+# DÜZELTME: Wix'ten gelen OPTIONS isteklerine izin verildi.
+@api_bp.route('/sohbet', methods=['POST', 'OPTIONS'])
 def sohbet():
+    # CORS (Preflight) isteğine anında onay dön
+    if request.method == 'OPTIONS':
+        return '', 204
+
     try:
         data = request.get_json()
         if not data or 'mesaj' not in data:
@@ -31,7 +43,9 @@ def sohbet():
         gecmis = data.get('gecmis', [])
         
         yanit = ai_service(mesaj, gecmis)
-        return jsonify({"basari": True, "yanit": yanit}), 200
+        
+        # KRİTİK DÜZELTME: Wix tarafı data.cevap beklediği için "yanit" değil "cevap" olarak gönderiyoruz!
+        return jsonify({"basari": True, "cevap": yanit}), 200
 
     except AIServiceError as e:
         return jsonify({"basari": False, "hata": str(e)}), 503
@@ -39,8 +53,13 @@ def sohbet():
         return jsonify({"basari": False, "hata": f"Sohbet servisinde bir hata oluştu: {str(e)}"}), 500
 
 
-@api_bp.route('/leads', methods=['POST'])
+# DÜZELTME: Wix'ten gelen OPTIONS isteklerine izin verildi.
+@api_bp.route('/leads', methods=['POST', 'OPTIONS'])
 def yeni_lead():
+    # CORS (Preflight) isteğine anında onay dön
+    if request.method == 'OPTIONS':
+        return '', 204
+
     try:
         data = request.get_json()
         if not data:
