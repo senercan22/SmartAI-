@@ -6,12 +6,14 @@ class AIServiceError(Exception):
     pass
 
 def ai_service(prompt, history=None):
-    if not getattr(Config, 'GROQ_API_KEY', None):
-        raise AIServiceError("Groq API anahtarı tanımlanmamış.")
+    # API anahtarının okunup okunmadığını kontrol et
+    api_key = getattr(Config, 'GROQ_API_KEY', None)
+    if not api_key:
+        raise AIServiceError("Groq API anahtarı (.env / Config) Python tarafından okunamadı!")
 
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {Config.GROQ_API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
 
@@ -19,48 +21,32 @@ def ai_service(prompt, history=None):
         {"role": "system", "content": getattr(Config, 'BUSINESS_CONTEXT', 'Sen yardımcı bir asistansın.')}
     ]
 
-    # Token tasarrufu için sadece son 6 mesajı al
     if history and isinstance(history, list):
-        for msg in history[-6:]:
+        for msg in history[-6:]:  # Son 6 mesaj
             messages.append(msg)
 
     messages.append({"role": "user", "content": prompt})
 
-    # Token limitine göre çalışacak model öncelik listesi
-    fallback_models = [
-        "llama-3.1-8b-instant",
-        "llama-3.1-70b-versatile",
-        "mixtral-8x7b-32768"
-    ]
+    payload = {
+        "model": "llama-3.1-8b-instant",
+        "messages": messages,
+        "max_tokens": 500,
+        "temperature": 0.7
+    }
 
-    for model in fallback_models:
-        payload = {
-            "model": model,
-            "messages": messages,
-            "max_tokens": 500,
-            "temperature": 0.7
-        }
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=25)
+        res_data = response.json()
 
-        try:
-            response = requests.post(url, headers=headers, json=payload, timeout=30)
-            res_data = response.json()
+        if response.status_code != 200:
+            error_msg = res_data.get('error', {}).get('message', 'Bilinmeyen API hatası')
+            raise AIServiceError(f"Groq API Reddetti ({response.status_code}): {error_msg}")
 
-            # Başarılı yanıt alındıysa hemen döndür
-            if response.status_code == 200:
-                return res_data['choices'][0]['message']['content']
-            
-            # 429 Token Limiti Aşıldı hatası alındıysa bir sonraki modele geç
-            elif response.status_code == 429:
-                continue
-                
-            # Diğer API hataları (Geçersiz key, sunucu çökmesi vb.)
-            else:
-                error_msg = res_data.get('error', {}).get('message', 'Bilinmeyen API hatası')
-                raise AIServiceError(f"Groq API Hatası ({response.status_code}): {error_msg}")
+        return res_data['choices'][0]['message']['content']
 
-        except requests.exceptions.RequestException:
-            # Anlık bağlantı kopmalarında da bir sonraki modele geçmeyi dene
-            continue
-
-    # Listedeki tüm modeller denendi ve token limitine/hataya takıldıysa
-    raise AIServiceError("Sistem yoğunluğu nedeniyle şu anda yanıt veremiyoruz, lütfen birazdan tekrar deneyin.")
+    except requests.exceptions.RequestException as e:
+        raise AIServiceError(f"Groq sunucusuna bağlanılamadı: {str(e)}")
+    except (KeyError, IndexError):
+        raise AIServiceError("Groq API'den beklenmeyen formatta veri geldi.")
+    except Exception as e:
+        raise AIServiceError(f"Kritik AI Hatası: {str(e)}")
