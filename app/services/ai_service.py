@@ -36,7 +36,7 @@ def ai_service(prompt, history=None):
     messages.append({"role": "user", "content": prompt})
 
     payload = {
-        "model": "llama3-8b-8192",  # YAVAŞ MODEL YERİNE EN HIZLI GROQ MODELİ EKLENDİ
+        "model": "llama-3.1-8b-instant",  # EN GÜNCEL VE HIZLI GROQ MODELİ EKLENDİ
         "messages": messages,
         "max_tokens": 500,
         "temperature": 0.7
